@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f3f4f6;
+  --color-foreground: #000000;
+  --color-card: #ffffff;
+  --color-card-foreground: #000000;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #000000;
+  --color-primary: #ec4899;
+  /* Pink-500 */
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #a855f7;
+  /* Purple-500 */
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #e5e7eb;
+  --color-muted-foreground: #737373;
+  --color-accent: #3b82f6;
+  /* Blue-500 */
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #000000;
+  --color-input: #000000;
+  --color-ring: #000000;
+}
+
+@utility neo-shadow {
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+@utility neo-shadow-sm {
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+}
+
+@utility neo-shadow-lg {
+  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+}
+
+@utility neo-border {
+  border: 2px solid black;
+}
+
+@utility neo-border-thick {
+  border: 4px solid black;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  /* Enforce pointer cursor for interactive elements */
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    cursor: pointer;
+  }
+}
