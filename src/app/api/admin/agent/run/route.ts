@@ -279,13 +279,22 @@ async function processMessages(client: TelegramClient, config: any) {
                         }
                     }
 
-                    await log(`Analyzing: ${message.message.substring(0, 30)}...`);
+                    await log(`Analyzing: ${message.message.substring(0, 50)}...`);
                     
                     const analysis = await analyzeWithLLM(messageText, config);
+                    
+                    if (!analysis) {
+                        await log(`[SKIP] Message classified as IRRELEVANT or LLM error`);
+                        continue;
+                    }
+                    
+                    await log(`[LLM] Classified as: ${analysis.type}`);
                     
                     if (analysis) {
                         if (analysis.type === 'NEW_AIRDROP') {
                             const targetName = analysis.data.name.trim();
+                            await log(`[CHECK] Looking for existing: "${targetName}"`);
+                            
                             // @ts-ignore
                             const existing = await prisma.airdrop.findFirst({
                                 where: { name: { equals: targetName, mode: 'insensitive' } }
@@ -303,9 +312,9 @@ async function processMessages(client: TelegramClient, config: any) {
                                         tasks: analysis.data.tasks || [],
                                     }
                                 });
-                                await log(`[NEW AIRDROP] Created: ${targetName}`, 'SUCCESS');
+                                await log(`[NEW AIRDROP] ✅ Created: ${targetName}`, 'SUCCESS');
                             } else {
-                                await log(`[SKIP] Airdrop ${targetName} already exists`);
+                                await log(`[SKIP] Airdrop "${targetName}" already exists (matched: "${existing.name}")`);
                             }
                         } else if (analysis.type === 'NEW_TASK') {
                             const targetName = analysis.data.targetAirdropName.trim();
