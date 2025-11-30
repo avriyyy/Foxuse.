@@ -47,9 +47,9 @@ export async function GET(req: Request) {
 }
 
 const AGENT_CONFIG = {
-    apiId: 38882589,
-    apiHash: "c71d392287aadf2a242105e7bc9fef16",
-    phone: "+6285175323045",
+    apiId: 30386736,
+    apiHash: "b858476b707a3d364630f8ade488133f",
+    phone: "+62895335022376",
     targetGroup: "@airdropfind",
     llmProvider: "OPENROUTER_GROK",
     llmApiKey: "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"
