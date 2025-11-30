@@ -860,26 +860,28 @@ export default function AdminPage() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button 
-                                        variant={isAgentActive ? "destructive" : "outline"} 
-                                        onClick={toggleAgentActive}
-                                        className="gap-2"
-                                    >
-                                        {isAgentActive ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
-                                        {isAgentActive ? "Pause System" : "Resume System"}
-                                    </Button>
-                                    <Button onClick={handleForceRun} disabled={agentStatus === 'RUNNING'} className="gap-2 bg-blue-600 hover:bg-blue-700">
-                                        <Terminal className="h-4 w-4" />
-                                        Force Run Now
-                                    </Button>
-                                    {agentStatus === 'RUNNING' && (
-                                        <Button onClick={handleStopAgent} variant="destructive" className="gap-2">
-                                            <Square className="h-4 w-4 fill-current" />
-                                            Stop
+                                {userRole === 'DEVELOPER' && (
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant={isAgentActive ? "destructive" : "outline"} 
+                                            onClick={toggleAgentActive}
+                                            className="gap-2"
+                                        >
+                                            {isAgentActive ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+                                            {isAgentActive ? "Pause System" : "Resume System"}
                                         </Button>
-                                    )}
-                                </div>
+                                        <Button onClick={handleForceRun} disabled={agentStatus === 'RUNNING'} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                                            <Terminal className="h-4 w-4" />
+                                            Force Run Now
+                                        </Button>
+                                        {agentStatus === 'RUNNING' && (
+                                            <Button onClick={handleStopAgent} variant="destructive" className="gap-2">
+                                                <Square className="h-4 w-4 fill-current" />
+                                                Stop
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="bg-zinc-900 rounded-lg p-4 font-mono text-xs text-green-400 h-[500px] overflow-y-auto">
                                 <div className="flex items-center gap-2 text-zinc-500 mb-2 border-b border-zinc-800 pb-2">

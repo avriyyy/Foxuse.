@@ -6,11 +6,21 @@ import { Api } from "telegram";
 
 // Helper to log to DB
 async function log(message: string, level: 'INFO' | 'ERROR' | 'SUCCESS' = 'INFO') {
-    console.log(`[AGENT] ${message}`);
+    const timestamp = new Date().toLocaleString('id-ID', { 
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(`[AGENT] ${logMessage}`);
     try {
         // @ts-ignore
         await prisma.agentLog.create({
-            data: { message, level }
+            data: { message: logMessage, level }
         });
     } catch (e) {
         console.error("Failed to write log to DB", e);
