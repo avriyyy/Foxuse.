@@ -1,3 +1,6 @@
 {
-    "buildCommand": "npx prisma generate && npm run build"
+  "crons": [{
+    "path": "/api/admin/agent/run",
+    "schedule": "0 12 * * *"
+  }]
 }

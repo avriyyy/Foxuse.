@@ -53,3 +53,28 @@ model User {
 
   @@map("users")
 }
+
+model AgentConfig {
+  id              String   @id @default(uuid())
+  telegramApiId   String
+  telegramApiHash String
+  telegramPhone   String
+  targetGroup     String
+  llmProvider     String
+  llmApiKey       String
+  sessionString   String?  @db.Text
+  isActive        Boolean  @default(false)
+  lastMessageId   Int?     // Track last processed message ID
+  updatedAt       DateTime @updatedAt
+
+  @@map("agent_config")
+}
+
+model AgentLog {
+  id        String   @id @default(uuid())
+  level     String   @default("INFO") // INFO, ERROR, SUCCESS
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("agent_logs")
+}

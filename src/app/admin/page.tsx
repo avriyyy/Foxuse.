@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, Edit, Save, X, Shield, Users, Activity, LayoutDashboard, List } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, Save, X, Shield, Users, Activity, LayoutDashboard, List, CheckCircle, AlertCircle, RefreshCcw, Bot, Terminal, Play, Square } from "lucide-react";
 import { AirdropApp } from "@/types";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
@@ -31,7 +31,7 @@ export default function AdminPage() {
     const { address, isConnected } = useAccount();
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [userRole, setUserRole] = useState<'USER' | 'ADMIN' | 'DEVELOPER'>('USER');
-    const [activeTab, setActiveTab] = useState<'overview' | 'airdrops' | 'users'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'airdrops' | 'users' | 'agent'>('overview');
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
 
     // Data State
@@ -53,6 +53,38 @@ export default function AdminPage() {
         imageUrl: "/placeholder.png"
     });
 
+    // Toast State
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | null }>({ message: '', type: null });
+
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast({ message: '', type: null }), 4000);
+    };
+
+    // Confirmation Dialog State
+    const [confirmDialog, setConfirmDialog] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+        setConfirmDialog({ isOpen: true, title, message, onConfirm });
+    };
+
+    const closeConfirm = () => {
+        setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+    };
+
+    // Agent State
+    const [agentStatus, setAgentStatus] = useState<'IDLE' | 'RUNNING' | 'ERROR'>('IDLE');
+    const [isAgentActive, setIsAgentActive] = useState(true);
+    const [agentLogs, setAgentLogs] = useState<string[]>([
+        "[SYSTEM] Agent is running in background (Scheduled).",
+        "[SYSTEM] Waiting for next execution cycle..."
+    ]);
+
     useEffect(() => {
         if (isConnected && address) {
             checkAuth();
@@ -62,6 +94,15 @@ export default function AdminPage() {
         }
     }, [isConnected, address]);
 
+    // Realtime Log Polling
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (agentStatus === 'RUNNING') {
+            interval = setInterval(fetchAgentData, 2000);
+        }
+        return () => clearInterval(interval);
+    }, [agentStatus]);
+
     const checkAuth = async () => {
         setLoading(true);
         try {
@@ -70,6 +111,7 @@ export default function AdminPage() {
                 setIsAuthorized(true);
                 setUserRole('DEVELOPER');
                 fetchData('DEVELOPER');
+                fetchAgentData();
                 return;
             }
 
@@ -79,6 +121,7 @@ export default function AdminPage() {
                 setIsAuthorized(true);
                 setUserRole('ADMIN');
                 fetchData('ADMIN');
+                fetchAgentData();
             } else {
                 setIsAuthorized(false);
                 setLoading(false);
@@ -120,6 +163,57 @@ export default function AdminPage() {
         }
     };
 
+    const fetchAgentData = async () => {
+        try {
+            const configRes = await fetch('/api/admin/agent/config');
+            const configData = await configRes.json();
+            if (configData.config) {
+                setIsAgentActive(configData.config.isActive);
+            }
+
+            const logsRes = await fetch('/api/admin/agent/logs');
+            const logsData = await logsRes.json();
+            if (logsData.logs) {
+                setAgentLogs(logsData.logs.map((l: any) => `[${l.level}] ${l.message}`));
+            }
+        } catch (error) {
+            console.error("Error fetching agent data:", error);
+        }
+    };
+
+    const handleForceRun = async () => {
+        setAgentStatus('RUNNING');
+        try {
+            const res = await fetch('/api/admin/agent/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'START' })
+            });
+            const data = await res.json();
+            
+            if (data.status === 'RUNNING') {
+                showToast("✅ Agent run triggered successfully!", 'success');
+                fetchAgentData();
+                setAgentStatus('IDLE');
+            } else {
+                showToast("❌ Error: " + (data.error || "Unknown error"), 'error');
+                setAgentStatus('ERROR');
+            }
+        } catch (error) {
+            console.error(error);
+            setAgentStatus('ERROR');
+            showToast("❌ Failed to trigger agent", 'error');
+        }
+    };
+
+    const handleStopAgent = async () => {
+        setAgentStatus('IDLE');
+    };
+
+    const toggleAgentActive = async () => {
+        setIsAgentActive(!isAgentActive);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!address) return;
@@ -137,32 +231,43 @@ export default function AdminPage() {
             if (res.ok) {
                 fetchData(userRole);
                 resetForm();
-                alert(editingId ? "Airdrop updated!" : "Airdrop created!");
+                showToast(editingId ? "✅ Airdrop updated successfully!" : "✅ Airdrop created successfully!", 'success');
             } else {
-                alert("Failed to save airdrop");
+                showToast("❌ Failed to save airdrop", 'error');
             }
         } catch (error) {
             console.error("Error saving airdrop:", error);
+            showToast("❌ Error saving airdrop", 'error');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this airdrop?")) return;
-        if (!address) return;
+        showConfirm(
+            "Delete Airdrop",
+            "Are you sure you want to delete this airdrop? This action cannot be undone.",
+            async () => {
+                if (!address) return;
 
-        try {
-            const res = await fetch(`/api/airdrops/${id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ walletAddress: address })
-            });
+                try {
+                    const res = await fetch(`/api/airdrops/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ walletAddress: address })
+                    });
 
-            if (res.ok) {
-                setAirdrops(airdrops.filter(a => a.id !== id));
+                    if (res.ok) {
+                        setAirdrops(airdrops.filter(a => a.id !== id));
+                        showToast("✅ Airdrop deleted successfully!", 'success');
+                    } else {
+                        showToast("❌ Failed to delete airdrop", 'error');
+                    }
+                } catch (error) {
+                    console.error("Error deleting airdrop:", error);
+                    showToast("❌ Error deleting airdrop", 'error');
+                }
+                closeConfirm();
             }
-        } catch (error) {
-            console.error("Error deleting airdrop:", error);
-        }
+        );
     };
 
     const handleEdit = (app: AirdropApp) => {
@@ -216,13 +321,14 @@ export default function AdminPage() {
             });
 
             if (res.ok) {
-                alert("User role updated!");
+                showToast("✅ User role updated successfully!", 'success');
                 fetchData('DEVELOPER'); // Refresh list
             } else {
-                alert("Failed to update role");
+                showToast("❌ Failed to update role", 'error');
             }
         } catch (error) {
             console.error("Error updating role:", error);
+            showToast("❌ Error updating role", 'error');
         }
     };
 
@@ -266,7 +372,51 @@ export default function AdminPage() {
     return (
         <div className="min-h-screen bg-zinc-100">
             <Navbar />
-            <main className="container mx-auto p-6 max-w-6xl">
+            <main className="container mx-auto p-6 max-w-6xl relative">
+                {/* Custom Toast Notification */}
+                {toast.type && (
+                    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-2xl border-2 animate-in slide-in-from-top-5 fade-in duration-300 ${
+                        toast.type === 'success' 
+                            ? 'bg-green-50 border-green-500 text-green-900' 
+                            : 'bg-red-50 border-red-500 text-red-900'
+                    }`}>
+                        {toast.type === 'success' ? <CheckCircle className="h-6 w-6 text-green-600" /> : <AlertCircle className="h-6 w-6 text-red-600" />}
+                        <span className="font-bold text-sm">{toast.message}</span>
+                    </div>
+                )}
+
+                {/* Custom Confirmation Dialog */}
+                {confirmDialog.isOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-200">
+                            <div className="p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="rounded-full bg-red-100 p-3">
+                                        <AlertCircle className="h-6 w-6 text-red-600" />
+                                    </div>
+                                    <h3 className="text-xl font-black uppercase">{confirmDialog.title}</h3>
+                                </div>
+                                <p className="text-zinc-600 mb-6">{confirmDialog.message}</p>
+                                <div className="flex gap-3 justify-end">
+                                    <Button
+                                        variant="outline"
+                                        onClick={closeConfirm}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => {
+                                            confirmDialog.onConfirm();
+                                        }}
+                                    >
+                                        Confirm
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="mb-8 flex items-center justify-between">
                     <div>
                         <h1 className="text-4xl font-black uppercase">Admin Panel</h1>
@@ -316,6 +466,16 @@ export default function AdminPage() {
                             Users
                         </button>
                     )}
+                    <button
+                        onClick={() => setActiveTab('agent')}
+                        className={`flex items-center gap-2 px-4 py-2 font-bold border-b-2 transition-colors ${activeTab === 'agent'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                            }`}
+                    >
+                        <Bot className="h-4 w-4" />
+                        AI Agent
+                    </button>
                 </div>
 
                 {loading ? (
@@ -398,10 +558,23 @@ export default function AdminPage() {
                             <div className="space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-2xl font-black uppercase">All Airdrops</h2>
-                                    <Button onClick={handleCreate} className="gap-2">
-                                        <Plus className="h-4 w-4" />
-                                        Add New Airdrop
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            size="icon"
+                                            onClick={() => {
+                                                fetchData(userRole);
+                                                showToast("✅ Data refreshed!", 'success');
+                                            }}
+                                            disabled={loading}
+                                        >
+                                            <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                        </Button>
+                                        <Button onClick={handleCreate} className="gap-2">
+                                            <Plus className="h-4 w-4" />
+                                            Add New Airdrop
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <div className="grid gap-4">
@@ -660,6 +833,64 @@ export default function AdminPage() {
                                 ))}
                                 {users.length === 0 && (
                                     <p className="text-zinc-500 text-sm text-center py-4">No users yet. Users will appear here once they save an airdrop.</p>
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+                ) : activeTab === 'agent' ? (
+                    <div className="space-y-6">
+                        <Card className="p-6">
+                            <h2 className="mb-6 text-xl font-black uppercase flex items-center gap-2">
+                                <Activity className="h-5 w-5" />
+                                Agent Monitor
+                            </h2>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className={`h-3 w-3 rounded-full ${
+                                        agentStatus === 'RUNNING' ? 'bg-yellow-400 animate-pulse' : 
+                                        isAgentActive ? 'bg-green-500' : 'bg-red-500'
+                                    }`} />
+                                    <div className="flex flex-col">
+                                        <span className="font-bold uppercase">
+                                            {agentStatus === 'RUNNING' ? 'EXECUTING NOW...' : 
+                                             isAgentActive ? 'SYSTEM ACTIVE' : 'SYSTEM PAUSED'}
+                                        </span>
+                                        <span className="text-xs text-zinc-500">
+                                            {isAgentActive ? 'Running on Schedule (Auto)' : 'Agent is disabled'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant={isAgentActive ? "destructive" : "outline"} 
+                                        onClick={toggleAgentActive}
+                                        className="gap-2"
+                                    >
+                                        {isAgentActive ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+                                        {isAgentActive ? "Pause System" : "Resume System"}
+                                    </Button>
+                                    <Button onClick={handleForceRun} disabled={agentStatus === 'RUNNING'} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                                        <Terminal className="h-4 w-4" />
+                                        Force Run Now
+                                    </Button>
+                                    {agentStatus === 'RUNNING' && (
+                                        <Button onClick={handleStopAgent} variant="destructive" className="gap-2">
+                                            <Square className="h-4 w-4 fill-current" />
+                                            Stop
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="bg-zinc-900 rounded-lg p-4 font-mono text-xs text-green-400 h-[500px] overflow-y-auto">
+                                <div className="flex items-center gap-2 text-zinc-500 mb-2 border-b border-zinc-800 pb-2">
+                                    <Terminal className="h-3 w-3" />
+                                    <span>System Logs (@airdropfind)</span>
+                                </div>
+                                {agentLogs.map((log, i) => (
+                                    <div key={i} className="mb-1">{log}</div>
+                                ))}
+                                {agentStatus === 'RUNNING' && (
+                                    <div className="animate-pulse">_</div>
                                 )}
                             </div>
                         </Card>

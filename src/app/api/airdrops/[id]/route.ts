@@ -40,7 +40,7 @@ export async function PUT(
         const { name, description, category, difficulty, potential, tasks, walletAddress } = body;
 
         // Admin check
-        const ADMIN_WALLET = "0x73F4a29D4d55F3bf090E584eD8D549DC02C68881";
+        const ADMIN_WALLET = "0xed5a458cbf7dca9fabab9b318b8b5e4fcc055f2b";
         const DEV_MODE = process.env.DEV_MODE === 'true';
 
         if (!DEV_MODE && walletAddress?.toLowerCase() !== ADMIN_WALLET.toLowerCase()) {
@@ -89,7 +89,7 @@ export async function DELETE(
         const { walletAddress } = body;
 
         // Admin check
-        const ADMIN_WALLET = "0x73F4a29D4d55F3bf090E584eD8D549DC02C68881";
+        const ADMIN_WALLET = "0xed5a458cbf7dca9fabab9b318b8b5e4fcc055f2b";
         const DEV_MODE = process.env.DEV_MODE === 'true';
 
         if (!DEV_MODE && walletAddress?.toLowerCase() !== ADMIN_WALLET.toLowerCase()) {
