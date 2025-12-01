@@ -38,21 +38,34 @@ async function analyzeWithLLM(text: string, config: any) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                "model": "google/gemini-2.0-flash-exp:free",
+                "model": "meta-llama/llama-3.3-70b-instruct:free",
                 "messages": [
                     {
                         "role": "system",
                         "content": `You are an expert airdrop hunter agent. Analyze Telegram messages.
                         
                         Determine TYPE:
-                        1. 'NEW_AIRDROP': New airdrop announcement, waitlist, testnet, or "List Live Airdrops" summary.
+                        1. 'NEW_AIRDROP': New airdrop announcement, waitlist, testnet, or "List Live Airdrops".
                         2. 'NEW_TASK': Update adding tasks, "Claim Point", "Connect Wallet", "New Tasks", or daily updates.
                         3. 'IRRELEVANT': Only for pure spam or unrelated chat.
                         
+                        EXAMPLES (FOLLOW THESE PATTERNS):
+                        
+                        Input: "Vectra Market Have a New Tasks Claim Point..."
+                        Output: {"type": "NEW_TASK", "data": {"targetAirdropName": "Vectra Market", "tasks": [{"title": "New Tasks Claim Point", "url": "", "completed": false}]}}
+                        
+                        Input: "Update Vectra Market Connect New Wallet..."
+                        Output: {"type": "NEW_TASK", "data": {"targetAirdropName": "Vectra Market", "tasks": [{"title": "Connect New Wallet", "url": "", "completed": false}]}}
+                        
+                        Input: "🔥 LIST LIVE AIRDROPS 23 NOV - 30 NOV: 1. THEO 2. ORDERLY..."
+                        Output: {"type": "NEW_AIRDROP", "data": {"name": "THEO", "description": "Listed in Live Airdrops summary", "category": "DeFi", "difficulty": "Medium", "potential": "High", "tasks": []}}
+                        
+                        Input: "gm guys"
+                        Output: {"type": "IRRELEVANT"}
+
                         CRITICAL RULES:
-                        - If message says "Update" or "New Tasks" or "Claim", it is likely NEW_TASK.
-                        - If message lists multiple airdrops (e.g. "LIST LIVE AIRDROPS"), treat as NEW_AIRDROP (pick the first or most prominent one if multiple).
-                        - Do NOT return IRRELEVANT just because details are missing. Use "Unknown" or guess based on context.
+                        - If message says "Update" or "New Tasks" or "Claim", it is NEW_TASK.
+                        - Do NOT return IRRELEVANT just because details are missing. Guess the project name from the text.
                         
                         Return JSON ONLY.
                         
@@ -61,7 +74,7 @@ async function analyzeWithLLM(text: string, config: any) {
                             "type": "NEW_AIRDROP",
                             "data": {
                                 "name": "Project Name",
-                                "description": "Description (or 'Airdrop Update' if brief)",
+                                "description": "Description",
                                 "category": "DeFi"|"NFT"|"L2"|"GameFi"|"Infrastructure"|"Wallet" (Default: "DeFi"),
                                 "difficulty": "Easy"|"Medium"|"Hard" (Default: "Medium"),
                                 "potential": "Low"|"Medium"|"High" (Default: "High"),
