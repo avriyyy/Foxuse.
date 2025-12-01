@@ -31,7 +31,7 @@ export default function AdminPage() {
     const { address, isConnected } = useAccount();
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [userRole, setUserRole] = useState<'USER' | 'ADMIN' | 'DEVELOPER'>('USER');
-    const [activeTab, setActiveTab] = useState<'overview' | 'airdrops' | 'users' | 'agent'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'airdrops' | 'users' | 'agent' | 'chat'>('overview');
     const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
 
     // Data State
@@ -84,6 +84,11 @@ export default function AdminPage() {
         "[SYSTEM] Agent is running in background (Scheduled).",
         "[SYSTEM] Waiting for next execution cycle..."
     ]);
+
+    // Chat Agent State
+    const [chatInput, setChatInput] = useState('');
+    const [chatSearching, setChatSearching] = useState(false);
+    const [chatResults, setChatResults] = useState<any>(null);
 
     useEffect(() => {
         if (isConnected && address) {
@@ -475,6 +480,16 @@ export default function AdminPage() {
                     >
                         <Bot className="h-4 w-4" />
                         AI Agent
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('chat')}
+                        className={`flex items-center gap-2 px-4 py-2 font-bold border-b-2 transition-colors ${activeTab === 'chat'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-zinc-500 hover:text-zinc-800'
+                            }`}
+                    >
+                        <Terminal className="h-4 w-4" />
+                        Chat Agent
                     </button>
                 </div>
 

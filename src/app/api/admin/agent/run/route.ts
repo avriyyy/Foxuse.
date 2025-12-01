@@ -430,15 +430,28 @@ async function analyzeWithLLM(text: string, config: any) {
             });
             
             const data = await response.json();
+            
+            // Log raw LLM response for debugging
+            if (!data.choices || !data.choices[0]) {
+                await log(`[LLM ERROR] Invalid response structure: ${JSON.stringify(data).substring(0, 200)}`, 'ERROR');
+                return null;
+            }
+            
             const content = data.choices[0].message.content;
+            await log(`[LLM RAW] ${content.substring(0, 150)}...`);
             
             const jsonStr = content.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(jsonStr);
             
-            if (parsed.type === 'IRRELEVANT') return null;
+            if (parsed.type === 'IRRELEVANT') {
+                await log(`[LLM] ❌ Classified as IRRELEVANT - Message not recognized as airdrop`);
+                return null;
+            }
+            
             return parsed;
 
-        } catch (e) {
+        } catch (e: any) {
+            await log(`[LLM ERROR] ${e.message}`, 'ERROR');
             console.error("LLM Error", e);
             return null;
         }
