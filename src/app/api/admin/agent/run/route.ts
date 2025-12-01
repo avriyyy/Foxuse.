@@ -383,16 +383,16 @@ async function analyzeWithLLM(text: string, config: any) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    "model": "x-ai/grok-beta",
+                    "model": "google/gemini-2.0-flash-exp:free",
                     "messages": [
                         {
                             "role": "system",
                             "content": `You are an expert airdrop hunter agent. Analyze Telegram messages.
                             
                             Determine TYPE:
-                            1. 'NEW_AIRDROP': New airdrop announcement
-                            2. 'NEW_TASK': Update adding tasks to existing airdrop
-                            3. 'IRRELEVANT': Not airdrop related
+                            1. 'NEW_AIRDROP': New airdrop announcement, waitlist, or testnet
+                            2. 'NEW_TASK': Update adding tasks/quests to existing airdrop
+                            3. 'IRRELEVANT': Not airdrop related (spam, chat, general news)
                             
                             Return JSON ONLY.
                             
@@ -401,8 +401,8 @@ async function analyzeWithLLM(text: string, config: any) {
                                 "type": "NEW_AIRDROP",
                                 "data": {
                                     "name": "Project Name",
-                                    "description": "Description",
-                                    "category": "DeFi"|"NFT"|"L2"|"GameFi"|"Infrastructure",
+                                    "description": "Description (mention if Waitlist/Testnet)",
+                                    "category": "DeFi"|"NFT"|"L2"|"GameFi"|"Infrastructure"|"Wallet",
                                     "difficulty": "Easy"|"Medium"|"Hard",
                                     "potential": "Low"|"Medium"|"High",
                                     "tasks": [{"id": "uuid", "title": "Task", "url": "URL", "completed": false}]

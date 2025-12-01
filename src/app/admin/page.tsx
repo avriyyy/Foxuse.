@@ -1022,15 +1022,45 @@ export default function AdminPage() {
                                                 </span>
                                             </div>
 
+                                            {result.stats && (
+                                                <div className="grid grid-cols-3 gap-2 mb-4 text-xs">
+                                                    <div className="bg-green-50 p-2 rounded text-center border border-green-100">
+                                                        <div className="font-bold text-green-700">{result.stats.created}</div>
+                                                        <div className="text-green-600">Created</div>
+                                                    </div>
+                                                    <div className="bg-blue-50 p-2 rounded text-center border border-blue-100">
+                                                        <div className="font-bold text-blue-700">{result.stats.updated}</div>
+                                                        <div className="text-blue-600">Updated</div>
+                                                    </div>
+                                                    <div className="bg-gray-50 p-2 rounded text-center border border-gray-100">
+                                                        <div className="font-bold text-gray-700">{result.stats.skipped}</div>
+                                                        <div className="text-gray-600">Skipped</div>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {result.found && result.messages.length > 0 && (
                                                 <div className="space-y-2">
                                                     {result.messages.map((msg: any, msgIdx: number) => (
                                                         <div key={msgIdx} className="bg-zinc-50 p-3 rounded border border-zinc-200">
-                                                            <div className="flex items-center gap-2 mb-2 text-xs text-zinc-500">
-                                                                <span>ID: {msg.id}</span>
-                                                                <span>•</span>
-                                                                <span>{new Date(msg.date * 1000).toLocaleString('id-ID')}</span>
-                                                                {msg.hasReply && <span className="text-blue-600">↩️ Reply</span>}
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                                                    <span>ID: {msg.id}</span>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(msg.date * 1000).toLocaleString('id-ID')}</span>
+                                                                    {msg.hasReply && <span className="text-blue-600">↩️ Reply</span>}
+                                                                </div>
+                                                                {msg.action && (
+                                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                                                        msg.action === 'CREATED' ? 'bg-green-100 text-green-700' :
+                                                                        msg.action === 'UPDATED' ? 'bg-blue-100 text-blue-700' :
+                                                                        'bg-gray-100 text-gray-600'
+                                                                    }`}>
+                                                                        {msg.action === 'CREATED' && '✅ Created'}
+                                                                        {msg.action === 'UPDATED' && '🔄 Updated'}
+                                                                        {msg.action === 'SKIPPED' && `⏭️ ${msg.reason}`}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <p className="text-sm">{msg.text.substring(0, 200)}...</p>
                                                         </div>
