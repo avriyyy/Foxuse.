@@ -102,6 +102,12 @@ async function analyzeWithLLM(text: string, config: any) {
             })
         });
         
+        if (!response.ok) {
+            const errorData = await response.text();
+            await log(`[LLM API ERROR] Status: ${response.status}. Response: ${errorData}`, 'ERROR');
+            return null;
+        }
+
         const data = await response.json();
         
         if (!data.choices || !data.choices[0]) {
