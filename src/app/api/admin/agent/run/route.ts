@@ -387,39 +387,44 @@ async function analyzeWithLLM(text: string, config: any) {
                     "messages": [
                         {
                             "role": "system",
-                            "content": `You are an expert airdrop hunter agent. Analyze Telegram messages.
-                            
-                            Determine TYPE:
-                            1. 'NEW_AIRDROP': New airdrop announcement, waitlist, or testnet
-                            2. 'NEW_TASK': Update adding tasks/quests to existing airdrop
-                            3. 'IRRELEVANT': Not airdrop related (spam, chat, general news)
-                            
-                            Return JSON ONLY.
-                            
-                            NEW_AIRDROP format:
-                            {
-                                "type": "NEW_AIRDROP",
-                                "data": {
-                                    "name": "Project Name",
-                                    "description": "Description (mention if Waitlist/Testnet)",
-                                    "category": "DeFi"|"NFT"|"L2"|"GameFi"|"Infrastructure"|"Wallet",
-                                    "difficulty": "Easy"|"Medium"|"Hard",
-                                    "potential": "Low"|"Medium"|"High",
-                                    "tasks": [{"id": "uuid", "title": "Task", "url": "URL", "completed": false}]
-                                }
+                        "content": `You are an expert airdrop hunter agent. Analyze Telegram messages.
+                        
+                        Determine TYPE:
+                        1. 'NEW_AIRDROP': New airdrop announcement, waitlist, testnet, or "List Live Airdrops" summary.
+                        2. 'NEW_TASK': Update adding tasks, "Claim Point", "Connect Wallet", "New Tasks", or daily updates.
+                        3. 'IRRELEVANT': Only for pure spam or unrelated chat.
+                        
+                        CRITICAL RULES:
+                        - If message says "Update" or "New Tasks" or "Claim", it is likely NEW_TASK.
+                        - If message lists multiple airdrops (e.g. "LIST LIVE AIRDROPS"), treat as NEW_AIRDROP (pick the first or most prominent one if multiple).
+                        - Do NOT return IRRELEVANT just because details are missing. Use "Unknown" or guess based on context.
+                        
+                        Return JSON ONLY.
+                        
+                        NEW_AIRDROP format:
+                        {
+                            "type": "NEW_AIRDROP",
+                            "data": {
+                                "name": "Project Name",
+                                "description": "Description (or 'Airdrop Update' if brief)",
+                                "category": "DeFi"|"NFT"|"L2"|"GameFi"|"Infrastructure"|"Wallet" (Default: "DeFi"),
+                                "difficulty": "Easy"|"Medium"|"Hard" (Default: "Medium"),
+                                "potential": "Low"|"Medium"|"High" (Default: "High"),
+                                "tasks": [{"id": "uuid", "title": "Task", "url": "URL", "completed": false}]
                             }
-                            
-                            NEW_TASK format:
-                            {
-                                "type": "NEW_TASK",
-                                "data": {
-                                    "targetAirdropName": "Project Name",
-                                    "tasks": [{"id": "uuid", "title": "Task", "url": "URL", "completed": false}]
-                                }
+                        }
+                        
+                        NEW_TASK format:
+                        {
+                            "type": "NEW_TASK",
+                            "data": {
+                                "targetAirdropName": "Project Name",
+                                "tasks": [{"id": "uuid", "title": "Task Description", "url": "URL", "completed": false}]
                             }
-                            
-                            IRRELEVANT format:
-                            { "type": "IRRELEVANT" }`
+                        }
+                        
+                        IRRELEVANT format:
+                        { "type": "IRRELEVANT" }`
                         },
                         {
                             "role": "user",
